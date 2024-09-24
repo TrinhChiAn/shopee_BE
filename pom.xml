@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.actvn</groupId>
-	<artifactId>Shopee_BE</artifactId>
+	<artifactId>shopee_BE</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Shopee_BE</name>
 	<description>Demo project for Spring Boot</description>
