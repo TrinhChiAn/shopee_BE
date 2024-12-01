@@ -2,10 +2,7 @@ package com.actvn.Shopee_BE.dto.Response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Data
@@ -14,7 +11,15 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CategoryResponse {
-    String id;
-    String name;
+@Builder
+public class ProductItemResponse {
+    private String id;
+    private String productName;
+    private String description;
+    private double discount;
+    private double price;
+    private String image;
+    private int quantity;
+    private double specialPrice;
+
 }
