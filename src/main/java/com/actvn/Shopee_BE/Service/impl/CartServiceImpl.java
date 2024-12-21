@@ -45,7 +45,7 @@ public class CartServiceImpl implements CartService {
     public ApiResponse<Object> addProductToCart(String productId, Integer quantity) {
         Cart cart = createCart();
         Product product = productRepository.findById(productId).orElseThrow(
-                ()->new RuntimeException("not found product")
+                () -> new RuntimeException("not found product")
         );
 
         CartItem cartItem = cartItemRepository.findCartItemByProductIdAndCartId(
@@ -71,17 +71,18 @@ public class CartServiceImpl implements CartService {
         newCartitem.setCart(cart);
         newCartitem.setDiscount(product.getDiscount());
         newCartitem.setPrice(product.getSpecialPrice());
+        newCartitem.setTotalPrice((product.getSpecialPrice()) * quantity);
 
         cartItemRepository.save(newCartitem);
 
         product.setQuantity(product.getQuantity());
-        cart.setTotalPrice(cart.getTotalPrice() + (product.getSpecialPrice())*quantity);
+        cart.setTotalPrice(cart.getTotalPrice() + (product.getSpecialPrice()) * quantity);
         cartRepository.save(cart);
 
         CartResponse cartResponse = mapper.map(cart, CartResponse.class);
         List<CartItem> cartItems = cart.getCartItems();
         log.info(cartItems);
-        Stream<ProductItemResponse> responseStream = cartItems.stream().map(item->{
+        Stream<ProductItemResponse> responseStream = cartItems.stream().map(item -> {
             ProductItemResponse map = mapper.map(item.getProduct(), ProductItemResponse.class);
             map.setQuantity(item.getQuantity());
             return map;
@@ -96,10 +97,6 @@ public class CartServiceImpl implements CartService {
 
     }
 
-    @Override
-    public void updateProductInCarts(String productId, Integer quantity) {
-
-    }
 
     @Override
     public void updateProductInCart(String cartId, String productId) {
@@ -108,16 +105,18 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public ApiResponse<Object> deleteProductFromCart(String cartId, String productId) {
-        Cart cart = cartRepository.findById(cartId).orElseThrow(()->new RuntimeException("loi"));
+        Cart cart = cartRepository.findById(cartId).orElseThrow(() -> new RuntimeException("loi"));
 
         CartItem cartItem = cartItemRepository.findCartItemByProductIdAndCartId(cartId, productId);
-        if(cartItem==null){
+        if (cartItem == null) {
             throw new ApiException("Can not found product with product_id");
         }
 
-        cart.setTotalPrice(cart.getTotalPrice()-cartItem.getPrice()*cartItem.getQuantity());
+        cart.setTotalPrice(cart.getTotalPrice() - cartItem.getPrice() * cartItem.getQuantity());
+
         cartItemRepository.deleteItemByProductIdAndCartId(cartId, productId);
 
+        cartRepository.save(cart);
         return ApiResponse.builder().message("oke").status(HttpStatus.OK).result(true).build();
     }
 
@@ -131,16 +130,16 @@ public class CartServiceImpl implements CartService {
 
     }
 
-    private CartResponse getCart(String email, String id){
+    private CartResponse getCart(String email, String id) {
         Cart cart = cartRepository.findCartByEmailAndId(email, id);
-        if (cart==null){
-            throw new ApiException("Cart "+id+" not found!");
+        if (cart == null) {
+            throw new ApiException("Cart " + id + " not found!");
         }
 
         CartResponse cartResponse = mapper.map(cart, CartResponse.class);
 
         List<ProductItemResponse> productItemResponses = cart.getCartItems().stream()
-                .map(p->mapper.map(p, ProductItemResponse.class)).toList();
+                .map(p -> mapper.map(p, ProductItemResponse.class)).toList();
 
         cartResponse.setProductItemResponses(productItemResponses);
         return cartResponse;
@@ -150,14 +149,14 @@ public class CartServiceImpl implements CartService {
     @Override
     public ApiResponse<List<CartResponse>> getAllCarts() {
         List<Cart> carts = cartRepository.findAll();
-        if(carts.isEmpty()){
+        if (carts.isEmpty()) {
             throw new ApiException("No cart exists!");
         }
 
-        List<CartResponse> cartResponses = carts.stream().map(item->{
+        List<CartResponse> cartResponses = carts.stream().map(item -> {
             CartResponse cartDRO = mapper.map(item, CartResponse.class);
-            List<ProductItemResponse> productRepositories = item.getCartItems().stream().map(product->
-                mapper.map(product.getProduct(),ProductItemResponse.class)
+            List<ProductItemResponse> productRepositories = item.getCartItems().stream().map(product ->
+                    mapper.map(product.getProduct(), ProductItemResponse.class)
             ).toList();
             cartDRO.setProductItemResponses(productRepositories);
             return cartDRO;
@@ -169,9 +168,9 @@ public class CartServiceImpl implements CartService {
                 .build();
     }
 
-    private Cart createCart(){
+    private Cart createCart() {
         Cart userCart = cartRepository.findCartByEmail(authUtils.getEmailLogged());
-        if(userCart!=null){
+        if (userCart != null) {
             return userCart;
         }
 
@@ -179,5 +178,60 @@ public class CartServiceImpl implements CartService {
         cart.setUser(authUtils.getUserLogged());
 
         return cartRepository.save(cart);
+    }
+
+    @Override
+    public ApiResponse<Object> updateProductInCarts(String productId, Integer quantity) {
+        String email = authUtils.getEmailLogged();
+        Cart userCart = cartRepository.findCartByEmail(email);
+        String cartId = userCart.getCartId();
+
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new ApiException("Cart " + cartId + " not found"));
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ApiException("Product " + productId + " not found"));
+
+        if (product.getQuantity() == 0) {
+            throw new ApiException("Product " + product.getProductName() + " is sold out");
+        }
+
+        if (product.getQuantity() < quantity) {
+            throw new ApiException("Product" + product.getProductName() + "is less or equal than" + product.getQuantity());
+        }
+
+        CartItem cartItem = cartItemRepository.findCartItemByProductIdAndCartId(cartId, productId);
+        if (cartItem == null) {
+            throw new ApiException("Product with name: " + product.getProductName() + " not available in the cart!");
+        }
+
+        int newQuantity = cartItem.getQuantity() + quantity;
+        if (newQuantity < 0) {
+            throw new ApiException("The result quantity cannot be negative!");
+        }
+        if (newQuantity == 0) {
+            deleteProductFromCart(cartId, productId);
+        } else {
+            cartItem.setQuantity(newQuantity);
+            cart.setTotalPrice(cart.getTotalPrice() + (cartItem.getPrice() * quantity));
+
+            cartRepository.save(cart);
+        }
+
+        CartItem updateItem = cartItemRepository.save(cartItem);
+        if (updateItem.getQuantity() == 0) {
+            cartRepository.deleteById(updateItem.getCartItemId());
+        }
+
+        CartResponse cartDTO = mapper.map(cart, CartResponse.class);
+        List<CartItem> cartItems = cart.getCartItems();
+        List<ProductItemResponse> productItemResponses = cartItems.stream().map(item -> {
+            ProductItemResponse dto = mapper.map(item.getProduct(), ProductItemResponse.class);
+            dto.setQuantity(item.getQuantity());
+            return dto;
+        }).toList();
+
+        cartDTO.setProductItemResponses(productItemResponses);
+        return ApiResponse.builder().message("oke").status(HttpStatus.OK).result(cartDTO).build();
     }
 }

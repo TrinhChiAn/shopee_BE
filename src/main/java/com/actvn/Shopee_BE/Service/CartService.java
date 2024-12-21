@@ -11,7 +11,7 @@ public interface CartService {
 
     ApiResponse<Object> addProductToCart(String productId, Integer quantity);
 
-    void updateProductInCarts(String productId, Integer quantity);
+    ApiResponse<Object> updateProductInCarts(String productId, Integer quantity);
 
     void updateProductInCart(String cartId, String productId);
 

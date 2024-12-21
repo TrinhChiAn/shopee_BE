@@ -26,16 +26,16 @@ public class CartController {
         return ResponseEntity.ok().body(cartService.addProductToCart(productId, quantity));
     }
 
-    @PutMapping("/product/{productId}/quantity/{quantity}")
-    public void updateCartProduct(@PathVariable String productId,
-                                  @PathVariable int quantity) {
-
+    @PutMapping("/products/{productId}/quantity/{quantity}")
+    public ResponseEntity<ApiResponse<Object>> updateCartProduct(@PathVariable String productId,
+                                                                 @PathVariable int quantity) {
+        return ResponseEntity.ok().body(cartService.updateProductInCarts(productId, quantity));
     }
 
     @DeleteMapping("/{cartId}/product/{productId}")
     public ResponseEntity<ApiResponse<Object>> deleteProductFromCart(@PathVariable String cartId,
                                                                      @PathVariable String productId) {
-       return ResponseEntity.ok().body(cartService.deleteProductFromCart(cartId, productId));
+        return ResponseEntity.ok().body(cartService.deleteProductFromCart(cartId, productId));
     }
 
     @GetMapping("/user/cart")

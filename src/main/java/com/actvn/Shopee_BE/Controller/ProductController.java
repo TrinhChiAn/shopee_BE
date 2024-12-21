@@ -7,6 +7,7 @@ import com.actvn.Shopee_BE.dto.Request.ProductRequest;
 import com.actvn.Shopee_BE.dto.Response.ApiResponse;
 import com.actvn.Shopee_BE.dto.Response.PageResponse;
 import com.actvn.Shopee_BE.dto.Response.ProductItemResponse;
+import com.actvn.Shopee_BE.entity.Product;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,11 @@ public class ProductController {
             @RequestBody ProductRequest productRequest
     ){
         return ResponseEntity.ok().body(productService.createNewProduct(categoryId,productRequest));
+    }
+
+    @GetMapping("/product/{id}")
+    public ResponseEntity<Product> getProductById(@PathVariable String id){
+        return ResponseEntity.ok().body(productService.getProductById(id));
     }
 
     @GetMapping("/public/categories/{categoryId}/product")

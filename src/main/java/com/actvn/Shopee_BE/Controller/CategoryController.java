@@ -5,6 +5,8 @@ import com.actvn.Shopee_BE.common.Constants;
 import com.actvn.Shopee_BE.dto.Request.CategoryRequest;
 import com.actvn.Shopee_BE.dto.Response.ApiResponse;
 import com.actvn.Shopee_BE.entity.Category;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -34,6 +36,16 @@ public class CategoryController {
     }
 
     @GetMapping("public/categories/{id}")
+    @Operation(
+            summary = "Get category id"
+
+    )
+    @ApiResponses(
+            value = {
+                   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully"),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not auth")
+            }
+    )
     public ResponseEntity<ApiResponse> getCategoryById(@PathVariable String id){
         Category category = categoryService.getNewCategoryById(id);
 
